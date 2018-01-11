@@ -428,7 +428,7 @@ handle_cast({'continue', Key}, #state{flow=Flow
             {'noreply', launch_cf_module(State#state{flow=NewFlow})}
     end;
 handle_cast({'stop', 'undefined'}, #state{flows=[]}=State) ->
-    {'stop', 'normal', State#state{destroyed='true'}};
+    {'stop', 'normal', State};
 handle_cast({'stop', Cause}, #state{flows=[]
                                    ,call=Call
                                    }=State) ->
