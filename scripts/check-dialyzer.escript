@@ -1,3 +1,4 @@
+
 #!/usr/bin/env escript
 %%! +A0 -sname kazoo_dialyzer
 %% -*- coding: utf-8 -*-
@@ -124,7 +125,7 @@ ensure_kz_types(Beams) ->
 
 do_warn_path({_, []}, Acc) -> Acc;
 do_warn_path({'beams', Beams}, {N, PLT}) ->
-    try lists:split(5, Beams) of
+    try lists:split(10, Beams) of
         {Ten, Rest} ->
             do_warn_path({'beams', Rest}
                         ,{N + scan_and_print(PLT, Ten), PLT}
@@ -134,15 +135,7 @@ do_warn_path({'beams', Beams}, {N, PLT}) ->
             {N + scan_and_print(PLT, Beams), PLT}
     end;
 do_warn_path({'app', Beams}, {N, PLT}) ->
-    try lists:split(5, Beams) of
-        {Ten, Rest} ->
-            do_warn_path({'app', Rest}
-                        ,{N + scan_and_print(PLT, Ten), PLT}
-                        )
-    catch
-        'error':'badarg' ->
-            {N + scan_and_print(PLT, Beams), PLT}
-    end.
+    {N + scan_and_print(PLT, Beams), PLT}.
 
 scan_and_print(PLT, Bs) ->
     Beams = ensure_kz_types(Bs),
