@@ -169,23 +169,21 @@ relx_gen_id() {
     od -t x -N 4 /dev/urandom | head -n1 | awk '{print $2}'
 }
 
-# Control a node
-relx_nodetool() {
-    command="$1"; shift
-
-    escript_emulator_args $ROOTDIR/bin/nodetool
-
-    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$NAME" \
-                                -setcookie "$COOKIE" "$command" $@
-}
-
-# Run an escript in the node's environment
-relx_escript() {
-    shift; scriptpath="$1"; shift
-    export RELEASE_ROOT_DIR
-
-    "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
-}
+# Control a node                                                            
+relx_nodetool() {                                                           
+    command="$1"; shift                                                     
+                                                                                                                                                                                                               
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$NAME" \        
+                                -setcookie "$COOKIE" "$command" $@          
+}                                                                           
+                                                                                                                                                                                                               
+# Run an escript in the node's environment                                  
+relx_escript() {                                                    
+    shift; scriptpath="$1"; shift                                          
+    export RELEASE_ROOT_DIR                                                                                                                                                                                    
+                                                                                                                                                                                                               
+    "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@                     
+}                                                                         
 
 relx_get_code_paths() {
     code="{ok, [{release,_,_,Apps}]} = file:consult(\"$REL_DIR/$REL_NAME.rel\"),"\
@@ -222,19 +220,6 @@ replace_os_vars() {
             gsub("[$]{"var"}",ENVIRON[var])
         }
     }1' < "$1" > "$2"
-}
-
-escript_emulator_args() {
-    if [ -n "${VM_ARGS}" ]; then
-        if grep -q '%%!' $1; then
-            cmd=$(echo sed -i"' '" "'s|%%!.*|%%! ${VM_ARGS}|'" $1)
-            eval "$cmd"
-        else
-            cmd=$(echo sed -i"' '" "'/#!.*/ a \\
-%%! ${VM_ARGS}\n'" $1)
-            eval "$cmd"
-        fi
-    fi
 }
 
 add_path() {
