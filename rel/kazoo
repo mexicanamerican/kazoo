@@ -161,7 +161,7 @@ relx_rem_sh() {
     # Setup remote shell command to control node
     exec "$BINDIR/erl" "$NAME_TYPE" "$id" -remsh "$NAME" -boot start_clean \
          -boot_var ERTS_LIB_DIR "$ERTS_LIB_DIR" \
-         -setcookie "$COOKIE" -hidden -kernel net_ticktime $TICKTIME
+         -setcookie "$COOKIE" -hidden -kernel net_ticktime $TICKTIME $VM_ARGS
 }
 
 # Generate a random id
@@ -173,6 +173,8 @@ relx_gen_id() {
 relx_nodetool() {
     command="$1"; shift
 
+    escript_emulator_args $ROOTDIR/bin/nodetool
+
     "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$NAME" \
                                 -setcookie "$COOKIE" "$command" $@
 }
@@ -183,12 +185,6 @@ relx_escript() {
     export RELEASE_ROOT_DIR
 
     "$ERTS_DIR/bin/escript" "$ROOTDIR/$scriptpath" $@
-}
-
-# Output a start command for the last argument of run_erl
-relx_start_command() {
-    printf "exec \"%s\" \"%s\"" "$RELEASE_ROOT_DIR/bin/$REL_NAME" \
-           "$START_OPTION"
 }
 
 relx_get_code_paths() {
@@ -226,6 +222,19 @@ replace_os_vars() {
             gsub("[$]{"var"}",ENVIRON[var])
         }
     }1' < "$1" > "$2"
+}
+
+escript_emulator_args() {
+    if [ -n "${VM_ARGS}" ]; then
+        if grep -q '%%!' $1; then
+            cmd=$(echo sed -i"' '" "'s|%%!.*|%%! ${VM_ARGS}|'" $1)
+            eval "$cmd"
+        else
+            cmd=$(echo sed -i"' '" "'/#!.*/ a \\
+%%! ${VM_ARGS}\n'" $1)
+            eval "$cmd"
+        fi
+    fi
 }
 
 add_path() {
@@ -276,6 +285,40 @@ relx_run_hooks() {
         # relative to the start script location
         [ "$SCRIPT_DIR/$HOOK_SCRIPT" ] && . "$SCRIPT_DIR/$HOOK_SCRIPT" $@
     done
+}
+
+relx_is_extension() {
+    EXTENSION=$1
+    case "$EXTENSION" in
+        {{{ extensions }}})
+            echo "1" 
+        ;;
+        *)
+            echo "0" 
+        ;;
+    esac
+}
+
+relx_get_extension_script() {
+    EXTENSION=$1
+    # below are the extensions declarations
+    # of the form:
+    # foo_extension="path/to/foo_script";bar_extension="path/to/bar_script"
+    {{{extension_declarations}}}
+    # get the command extension (eg. foo) and 
+    # obtain the actual script filename that it
+    # refers to (eg. "path/to/foo_script"
+    eval echo "$"${EXTENSION}_extension""
+}
+
+relx_run_extension() {
+    # drop the first argument which is the name of the
+    # extension script
+    EXTENSION_SCRIPT=$1
+    shift
+    # all extension script locations are expected to be
+    # relative to the start script location
+    [ "$SCRIPT_DIR/$EXTENSION_SCRIPT" ] && . "$SCRIPT_DIR/$EXTENSION_SCRIPT" $@
 }
 
 find_erts_dir
